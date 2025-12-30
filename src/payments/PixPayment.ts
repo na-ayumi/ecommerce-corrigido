@@ -1,11 +1,9 @@
 import { IPaymentMethod } from './IPaymentMethod';
 import logger from '../lib/logger';
-import { OrderController } from '../controllers/OrderController';
 
-const paymentDetailsExport = new OrderController().getPaymentDetails
-
-export class CreditCardPayment implements IPaymentMethod {
-    process(): void {
-        logger.info(`Processando pix`);
+export class PixPayment implements IPaymentMethod {
+    process(paymentDetails: any): void {
+        logger.info(`Processando pix ${paymentDetails.cpf.slice(-3)}`);
+        if (paymentDetails.cpf.length < 11) throw new Error('CPF Inválido');
     }
 }

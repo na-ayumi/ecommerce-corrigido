@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { getMailClient } from '../lib/mail';
 import nodemailer from 'nodemailer';
 import logger from '../lib/logger';
-import { CreditCardPayment } from '../payments/CreditCardPayment';
+import { PaymentFactory } from '../payments/PaymentFactory';
 
 const prisma = new PrismaClient();
 
@@ -50,34 +50,13 @@ export class OrderController {
       }
 
       // 3. PROCESSAMENTO DE PAGAMENTO (OCP)
-      const paymentMethods: Record<string, IPaymentMethod> = {
-        "credit_card": new CreditCardPayment()
-        //"pix": new PixPayment();
-      }
-      const payment = paymentMethods[paymentMethod]
-
+      const payment = PaymentFactory.getPaymentMethod(paymentMethod)
 
       if(payment) {
         payment.process(paymentDetails)
       } else {
         return res.status(400).json({ error: 'Método de pagamento não suportado' });
       }
-
-
-
-
-
-      // if (paymentMethod === 'credit_card') {
-      //   logger.info(`Processando cartão final ${paymentDetails.cardNumber.slice(-4)}`);
-      //   // Simulação de gateway
-      //   if (paymentDetails.cvv === '000') throw new Error('Cartão recusado');
-      
-      // } else if (paymentMethod === 'debit_card') {
-      //   logger.info('Processando débito...');
-      //   // Lógica de débito
-      // } else {
-      //   return res.status(400).json({ error: 'Método de pagamento não suportado' });
-      // }
 
       // 4. PERSISTÊNCIA (Violação de SRP - Controller acessando Banco) 
       const order = await prisma.order.create({
