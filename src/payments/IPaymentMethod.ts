@@ -1,3 +1,3 @@
 export interface IPaymentMethod{
-    process(): void;
+    process(paymentDetails: any): void;
 }
