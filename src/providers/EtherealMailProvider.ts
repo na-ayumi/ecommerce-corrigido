@@ -2,22 +2,18 @@ import nodemailer from 'nodemailer';
 import { IMailProvider } from './IMailProvider';
 
 export class EtherealMailProvider implements IMailProvider{
-    constructor (
-        from: string,
-        to: string,
-        subject: string,
-        text: string,
-        html: string
-    ) {}
-        
+    constructor(private customer: any){
+        this.customer = customer;
+    }
+    
 
-    async sendMail(from: string, to: string, subject: string, text: string, html: string): Promise<any> {
-        this.customer.sendMail({
-            from: '"DevStore" <noreply@devstore.com>',
+    public sendMail(from: string, to: string, subject: string, text: string, html: string): Promise<any> {
+        return this.customer.sendMail({
+            from,
             to,
             subject,
             text,
             html
-        })
+        });
     }
 }
