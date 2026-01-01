@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { IPaymentMethod } from '../payments/IPaymentMethod';
 import { PrismaClient } from '@prisma/client';
 import { getMailClient } from '../lib/mail';
-import nodemailer from 'nodemailer';
 import logger from '../lib/logger';
 import { PaymentFactory } from '../payments/PaymentFactory';
 import { EtherealMailProvider } from "../providers/EtherealMailProvider";
