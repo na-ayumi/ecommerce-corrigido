@@ -1,3 +1,3 @@
 export interface Product{
-    calculateFreight(total: number): number;
+    calculateFreight(): number;
 }

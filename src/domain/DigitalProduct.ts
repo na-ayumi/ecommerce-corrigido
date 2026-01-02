@@ -2,9 +2,10 @@
 import { Product } from "./IProduct";
 
 export class DigitalProduct implements Product{
+    public frete = 0;
     constructor(id: number, name: string, price: number) {}
 
-    calculateFreight(total: number): number {
-        return total;
+    calculateFreight(): number {
+        return this.frete;
     }
 }
