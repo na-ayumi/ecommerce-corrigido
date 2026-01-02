@@ -6,6 +6,8 @@ import logger from '../lib/logger';
 import { PaymentFactory } from '../payments/PaymentFactory';
 import { EtherealMailProvider } from "../providers/EtherealMailProvider";
 import { NotificationService } from "../services/NotificationService";
+import { ProductFactory } from '../domain/ProductFactory';
+import { Product } from '../domain/IProduct';
 
 const prisma = new PrismaClient();
 
@@ -35,18 +37,11 @@ export class OrderController {
         }
 
         // Violação de LSP e OCP: 
-        // Lógica condicional baseada em "tipo" (String). 
+        // Lógica condicional baseada em "tipo" (String).
         // Se adicionarmos "Serviço" ou "Assinatura", teremos que mexer aqui.
-        if (product.type === 'physical') {
-          totalAmount += product.price * item.quantity;
-          // Frete fixo simples
-          totalAmount += 10; 
-        } else if (product.type === 'digital') {
-           totalAmount += product.price * item.quantity;
-           // Produtos digitais não deveriam ter frete, ok.
-           // Mas se o aluno tentar tratar 'item' genericamente depois, vai ter problemas.
-        }
-
+        totalAmount+= product.price * item.quantity
+        totalAmount = ProductFactory.createProduct(product).calculateFreight(totalAmount)
+        
         productsDetails.push({ ...product, quantity: item.quantity });
       }
 
