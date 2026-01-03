@@ -21,12 +21,13 @@ export class OrderController {
     try {
       const { customer, items, paymentMethod, paymentDetails } = req.body;
 
-      await orderService.executeOrderService(req.body)
+      let [order] = await orderService.executeOrderService(req.body)
+      let [, emailPreview] = await orderService.executeOrderService(req.body)
 
       return res.json({ 
         message: 'Pedido processado com sucesso', 
         orderId: order.id,
-        emailPreview // Retorna o link na API para facilitar
+        emailPreview: emailPreview // Retorna o link na API para facilitar
       });
 
     } catch (error: any) {

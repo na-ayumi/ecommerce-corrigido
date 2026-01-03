@@ -1,4 +1,5 @@
 //Fluxo do pedido (Valida -> Paga -> Salva -> Notifica)
+import nodemailer from 'nodemailer';
 import { ProductFactory } from "../domain/ProductFactory";
 import { OrderController } from "../controllers/OrderController";
 import { Product } from "@prisma/client";
@@ -43,12 +44,17 @@ export class OrderService {
         let totalAmount = 0;
         let productsDetails = [];
         const products = await this.CalculateStock(itens)
-        for(const item of itens){
-            //for(const product of products){
-                totalAmount+= products[item].price * item.quantity
-                totalAmount+= ProductFactory.createProduct(products).calculateFreight()
+// const product = ProductFactory.createProduct(productDataFromDB);
+// const freight = product.calculateFreight();
+        for(let i=0; i<itens.length; i++){
+            const item = itens[i]
+            const productDataFromDB = products[i]
+
+            const product = ProductFactory.createProduct(productDataFromDB);
+            const freight = product.calculateFreight();
+            totalAmount+= (productDataFromDB.price * item.quantity) + freight
             //}
-            productsDetails.push({ ...products, quantity: item.quantity });
+            productsDetails.push({ ...productDataFromDB, quantity: item.quantity });
         }
         return [totalAmount, productsDetails];
     }
@@ -79,7 +85,7 @@ export class OrderService {
       return order;
     }
 
-    async Notification(data: any, ) {
+    async Notification(data: any): Promise<any> {
         let [totalAmount] = await this.CalculatePrice(data)
         let [, productsDetails] = await this.CalculatePrice(data)
         let order = await this.OrderCreate(data)
@@ -95,21 +101,18 @@ export class OrderService {
             totalAmount,
             productsDetails
         )
+
+        return emailPreview
     }
 
-    async executeOrderService(data: any) {
+    async executeOrderService(data: any): Promise<[any, any]> {
         this.validateReq(data.items)
         this.CalculateStock(data.items)
         this.CalculatePrice(data.items)
         this.PaymentProcess(data.paymentMethod, data.paymentDetails)
-        this.OrderCreate(data)
-        this.Notification(data)
+        let order = await this.OrderCreate(data)
+        let emailPreview = this.Notification(data)
+        
+        return[order, emailPreview]
     }
-
 }
-
-
-
-
-// const product = ProductFactory.createProduct(productDataFromDB);
-// const freight = product.calculateFreight();
