@@ -1,19 +1,20 @@
 //Fluxo do pedido (Valida -> Paga -> Salva -> Notifica)
-import nodemailer from 'nodemailer';
 import { ProductFactory } from "../domain/ProductFactory";
-import { OrderController } from "../controllers/OrderController";
-import { Product } from "@prisma/client";
 import logger from '../lib/logger';
-import { PrismaClient } from '@prisma/client';
 import { PaymentFactory } from '../payments/PaymentFactory';
-import { IPaymentMethod } from '../payments/IPaymentMethod';
 import { getMailClient } from '../lib/mail';
 import { EtherealMailProvider } from "../providers/EtherealMailProvider";
 import { NotificationService } from "../services/NotificationService";
+import { IOrderRepository } from "../repositories/IOrderRepository";
+import { IProductRepository } from "../repositories/IProductRepository";
 
-const prisma = new PrismaClient();
 
 export class OrderService {
+    constructor(
+        private orderRepository: IOrderRepository,
+        private productRepository: IProductRepository
+    ) {};
+
     //Validação 
     validateReq(itens: any){
         if(!itens || itens.length === 0){
@@ -28,7 +29,8 @@ export class OrderService {
     async CalculateStock(itens: any): Promise<any[]> {
         const products: any[] = []
         for(const item of itens){
-            const product = await prisma.product.findUnique({ where: { id: item.productId } });
+            const product = await this.productRepository.findProduct(item.productId);
+            
             if (!product){
                 const error = new Error(`Produto ${item.productId} não encontrado`);
                 (error as any).statusCode = 400;
@@ -44,8 +46,8 @@ export class OrderService {
         let totalAmount = 0;
         let productsDetails = [];
         const products = await this.CalculateStock(itens)
-// const product = ProductFactory.createProduct(productDataFromDB);
-// const freight = product.calculateFreight();
+        // const product = ProductFactory.createProduct(productDataFromDB);
+        // const freight = product.calculateFreight();
         for(let i=0; i<itens.length; i++){
             const item = itens[i]
             const productDataFromDB = products[i]
@@ -74,18 +76,18 @@ export class OrderService {
 
     async OrderCreate(data: any): Promise<any> {
         let [totalAmount] = await this.CalculatePrice(data)
-        const order = await prisma.order.create({
-            data: {
-                customer: data.customer,
-                items: JSON.stringify(data.productsDetails),
-                total: totalAmount,
-                status: 'confirmed'
-            }
-      });
-      return order;
+        
+        const order = await this.orderRepository.createOrder(
+            data.customer,
+            JSON.stringify(data.productsDetails),
+            totalAmount,
+            'confirmed'
+        );
+
+        return order;
     }
 
-    async Notification(data: any): Promise<any> {
+    async Notification(data: any): Promise<void> {
         let [totalAmount] = await this.CalculatePrice(data)
         let [, productsDetails] = await this.CalculatePrice(data)
         let order = await this.OrderCreate(data)

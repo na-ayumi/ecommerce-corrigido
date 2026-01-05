@@ -1,18 +1,15 @@
 //(HTTP) Recebe request, chama OrderService, devolve response.
 
 import { Request, Response } from 'express';
-import { IPaymentMethod } from '../payments/IPaymentMethod';
-import { PrismaClient } from '@prisma/client';
-import { getMailClient } from '../lib/mail';
 import logger from '../lib/logger';
-import { PaymentFactory } from '../payments/PaymentFactory';
-import { EtherealMailProvider } from "../providers/EtherealMailProvider";
-import { NotificationService } from "../services/NotificationService";
-import { ProductFactory } from '../domain/ProductFactory';
 import {  OrderService } from '../services/OrderService';
+import { PrismaOrderRepository } from '../repositories/PrismaOrderRepository';
+import { PrismaProductRepository } from '../repositories/PrismaProductRepository';
 
-const prisma = new PrismaClient();
-const orderService = new OrderService();
+const orderRepository = new PrismaOrderRepository();
+const productRepository = new PrismaProductRepository();
+
+const orderService = new OrderService(orderRepository, productRepository);
 
 export class OrderController {
   
@@ -21,13 +18,12 @@ export class OrderController {
     try {
       const { customer, items, paymentMethod, paymentDetails } = req.body;
 
-      let [order] = await orderService.executeOrderService(req.body)
-      let [, emailPreview] = await orderService.executeOrderService(req.body)
+      let [order, emailPreview] = await orderService.executeOrderService(req.body);
 
       return res.json({ 
         message: 'Pedido processado com sucesso', 
         orderId: order.id,
-        emailPreview: emailPreview // Retorna o link na API para facilitar
+        emailPreview // Retorna o link na API para facilitar
       });
 
     } catch (error: any) {
