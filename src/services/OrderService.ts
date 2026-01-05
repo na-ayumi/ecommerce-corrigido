@@ -1,4 +1,3 @@
-//Fluxo do pedido (Valida -> Paga -> Salva -> Notifica)
 import { ProductFactory } from "../domain/ProductFactory";
 import logger from '../lib/logger';
 import { PaymentFactory } from '../payments/PaymentFactory';
@@ -17,11 +16,13 @@ export class OrderService {
 
     //Validação 
     validateReq(itens: any){
-        if(!itens || itens.length === 0){
-            logger.error('Tentativa de pedido sem itens');
-            const error = new Error("Carrinho vazio");
-            (error as any).statusCode = 400;
-            throw error;
+        for(const item of itens){
+            if(!itens || itens.length === 0 || item.quantity === 0){
+                logger.error('Tentativa de pedido sem itens');
+                const error = new Error("Carrinho vazio");
+                (error as any).statusCode = 400;
+                throw error;
+            }
         }
     }
 
@@ -46,8 +47,6 @@ export class OrderService {
         let totalAmount = 0;
         let productsDetails = [];
         const products = await this.CalculateStock(itens)
-        // const product = ProductFactory.createProduct(productDataFromDB);
-        // const freight = product.calculateFreight();
         for(let i=0; i<itens.length; i++){
             const item = itens[i]
             const productDataFromDB = products[i]
@@ -75,11 +74,11 @@ export class OrderService {
     }
 
     async OrderCreate(data: any): Promise<any> {
-        let [totalAmount] = await this.CalculatePrice(data)
+        let [totalAmount, productsDetails] = await this.CalculatePrice(data.items)
         
         const order = await this.orderRepository.createOrder(
             data.customer,
-            JSON.stringify(data.productsDetails),
+            JSON.stringify(productsDetails),
             totalAmount,
             'confirmed'
         );
@@ -87,9 +86,9 @@ export class OrderService {
         return order;
     }
 
-    async Notification(data: any): Promise<void> {
-        let [totalAmount] = await this.CalculatePrice(data)
-        let [, productsDetails] = await this.CalculatePrice(data)
+    async Notification(data: any): Promise<string | false> {
+        let [totalAmount] = await this.CalculatePrice(data.items)
+        let [, productsDetails] = await this.CalculatePrice(data.items)
         let order = await this.OrderCreate(data)
         let customer = data.customer
         const mailer = await getMailClient();
@@ -113,8 +112,8 @@ export class OrderService {
         this.CalculatePrice(data.items)
         this.PaymentProcess(data.paymentMethod, data.paymentDetails)
         let order = await this.OrderCreate(data)
-        let emailPreview = this.Notification(data)
-        
+        let emailPreview = await this.Notification(data)
+
         return[order, emailPreview]
     }
 }

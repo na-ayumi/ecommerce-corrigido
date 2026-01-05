@@ -1,5 +1,3 @@
-//(HTTP) Recebe request, chama OrderService, devolve response.
-
 import { Request, Response } from 'express';
 import logger from '../lib/logger';
 import {  OrderService } from '../services/OrderService';

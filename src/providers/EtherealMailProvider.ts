@@ -6,7 +6,6 @@ export class EtherealMailProvider implements IMailProvider{
         this.customer = customer;
     }
     
-
     public sendMail(from: string, to: string, subject: string, text: string, html: string): Promise<any> {
         return this.customer.sendMail({
             from,
