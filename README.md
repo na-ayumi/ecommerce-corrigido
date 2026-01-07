@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ## Instalação e Configuração
 1.  **Clone o código do GitHub:**
     ```bash
